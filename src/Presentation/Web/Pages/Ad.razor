@@ -1,0 +1,93 @@
+﻿@page "/"
+
+@using MudBlazor
+@using Web.Services
+@using Web.Pages
+
+@inject HttpClient Http
+@inject IAdServiceRest AdService
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+
+<h2 class="display-2">Ads List</h2>
+
+<hr />
+
+<div class="form-group mb-4">
+    <MudButton @onclick="() => CreateAdDialog (new Models.AdDTO(), false)" Color="Color.Primary">New Ad</MudButton>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Id</th>
+            <th scope="col">Description</th>
+            <th scope="col">Status</th>
+            <th scope="col">Total Leads</th>
+            <th scope="col">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Ads == null)
+        {
+            <tr>
+                <td colspan="4">Loading...</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var ad in Ads)
+            {
+                <tr>
+                    <td scope="row">@ad.AdId</td>
+                    <td scope="row">@ad.AdDescription</td>
+                    <td scope="row">@ad.AdStatus</td>
+                    <td scope="row">@ad.AdTotalLeads</td>
+                    <td scope="row">
+                        <MudButton @onclick="(() => ShowEditionModal(ad, true))">Detail</MudButton>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+@code {
+    private IEnumerable<Models.AdDTO> Ads;
+    protected override async Task OnInitializedAsync()
+    {
+        Ads = await AdService.GetAll();
+    }
+
+    private async Task ReloadAds()
+    {
+        Ads = await AdService.GetAll();
+        StateHasChanged();
+    }
+
+    private async Task ShowEditionModal(Models.AdDTO ad, bool IsEdition)
+    {
+        var parameters = new DialogParameters { ["Ad"] = ad, ["isEdit"] = IsEdition };
+
+        DialogOptions options = new DialogOptions { CloseButton = true };
+        var dialog =await DialogService.ShowAsync<AdDialog>("Edit Ad", parameters, options);
+
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+            await ReloadAds();
+    }
+
+    private async Task CreateAdDialog(Models.AdDTO ad, bool IsEdition)
+    {
+        var parameters = new DialogParameters { ["Ad"] = ad, ["isEdit"] = IsEdition };
+
+        DialogOptions options = new DialogOptions { CloseButton = true };
+        var dialog = await DialogService.ShowAsync<AdDialog>("Create Ad", parameters, options);
+
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+            await ReloadAds();
+    }
+}

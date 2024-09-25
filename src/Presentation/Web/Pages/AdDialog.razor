@@ -1,0 +1,59 @@
+﻿@using MudBlazor
+@using Web.Models
+@using Web.Services
+@inject IAdServiceRest AdService
+
+
+<MudDialog MaxWidth="MaxWidth.Large" FullWidth="true" Style="width:80vw; height 80vh">
+    <DialogContent>
+        <MudForm @ref="form" @bind-IsValid="@success" @bind-Errors="@errors">
+            <MudTextField @bind-Value="Ad.AdDescription" Label="Description" FullWidth="true" Variant="Variant.Outlined" Required="true" RequiredError="Description field is required!" />
+            <MudTextField @bind-Value="Ad.AdTotalLeads" Label="Total Leads" FullWidth="true" Variant="Variant.Outlined" Required="true" RequiredError="Total Leads field is required!" />
+            <MudSelect T="EAdStatus" @bind-Value="Ad.AdStatus" Label="Status" FullWidth="true" Variant="Variant.Outlined">
+                <MudSelectItem Value="EAdStatus.Active">Active</MudSelectItem>
+                <MudSelectItem Value="EAdStatus.Paused">Paused</MudSelectItem>
+            </MudSelect>
+            <MudTextField @bind-Value="Ad.AdBalance" Label="Balance" FullWidth="true" Variant="Variant.Outlined" />
+            <MudDatePicker @bind-Date="Ad.AdCreationDate" Label="Creation Date" Variant="Variant.Outlined" ShowToolbar="false" Required="true" RequiredError="Creation Date field is required!" />
+            <MudTextField @bind-Value="Ad.AdExternalId" Label="External Id" FullWidth="true" Variant="Variant.Outlined" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton ButtonType="ButtonType.Submit" OnClick="ValidateSave" Validate Color="Color.Success">@((isEdit ? "Update" : "Create"))</MudButton>
+        <MudButton OnClick="Cancel" Color="Color.Error">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public Models.AdDTO Ad { get; set; }
+    [Parameter] public bool isEdit { get; set; }
+    MudForm form;
+
+    bool success;
+    string[] errors = { };
+
+    private async Task ValidateSave()
+    {
+        await form.Validate();
+
+        if (success)
+        {
+            await Save();
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task Save()
+    {
+        await AdService.Create(Ad);
+        await AdService.GetAll();
+
+        MudDialog.Close(DialogResult.Ok(Ad));
+    }
+}
